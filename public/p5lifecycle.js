@@ -2,6 +2,7 @@ let myMap, canvas, polySynth, synth, soundLoop
 let workdata = []
 let time = 0
 let year = 1980
+let playing = false
 
 // Carrega mapa
 const options = {
@@ -49,6 +50,8 @@ function setup() {
    soundLoop = new p5.SoundLoop(onSoundLoop, intervalInSeconds);
 
    synth = new p5.MonoSynth();
+   sineOsc = new p5.Oscillator('sine');
+   canvas.mousePressed(playOscillator);
 }
 
 function draw() {
@@ -60,12 +63,13 @@ function draw() {
     console.log('year', year)
   }
   if(notes.length  > 0) {
-    soundLoop.start()
+    // soundLoop.start()
   } else {
     soundLoop.stop()
   }
   clear()
   notes = []
+
   workdata.forEach(country => {
     const { coordinates } = country
     const { x, y } = myMap.latLngToPixel(coordinates[1], coordinates[0])
@@ -76,6 +80,8 @@ function draw() {
     ellipse(x, y, radius, radius)
     if(x > 0 && x < width && y > 0 && y < height && radius > 0) {
       notes.push(radius)
+      sineOsc.freq(radius, 0.1);
+      sineOsc.amp(0.5);
     }
   })
   textSize(64)
@@ -83,22 +89,17 @@ function draw() {
   text(year, window.width - 180, window.height - 50);
 }
 
-function playSynth(noe) {
-  userStartAudio()
-  const note = random([ 'C4', 'D4', 'E4', 'F4', 'G4', 'H4'])
-  // note velocity (volume, from 0 to 1)
-  let velocity = 0.6
-  // time from now (in seconds)
-  let time = 0
-  // note duration (in seconds)
-  let dur = 1 
-
-  polySynth.play(note, velocity, time, dur)
-}
-
 function onSoundLoop(timeFromNow) {
   let noteIndex = (soundLoop.iterations - 1) % notes.length;
   let note = midiToFreq(notes[noteIndex]);
   synth.play(note, 0.5, timeFromNow);
   background(noteIndex * 360 / notes.length, 50, 100);
+}
+
+function playOscillator() {
+  // starting an oscillator on a user gesture will enable audio
+  // in browsers that have a strict autoplay policy.
+  // See also: userStartAudio();
+  sineOsc.start();
+  playing = true;
 }
